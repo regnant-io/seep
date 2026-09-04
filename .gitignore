@@ -1,0 +1,19 @@
+# Build output
+/target
+**/*.rs.bk
+
+# Local state — never commit an operator registry, a key, or an audit chain
+/.seep/
+*.key
+operators.json
+*.db
+*.db-wal
+*.db-shm
+gateway.lock
+nonces.log
+
+# Editors and platforms
+.DS_Store
+.idea/
+.vscode/
+*.swp

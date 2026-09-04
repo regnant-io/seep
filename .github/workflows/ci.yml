@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  # Incremental artifacts are worthless on a fresh runner and cost minutes of
+  # cache upload. Debug info likewise: a backtrace from CI is read from the log.
+  CARGO_INCREMENTAL: 0
+  RUSTFLAGS: -D warnings
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # SeeP runs on the machines it manages, so it is tested on all three.
+        # Most of the interesting behaviour — process listing, service control,
+        # path handling — is exactly where platforms differ.
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace --all-targets
+      # `cargo test` skips doc examples with --all-targets, and a doc example
+      # that no longer compiles is documentation that lies.
+      - run: cargo test --workspace --doc
+
+  lint:
+    name: fmt and clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      # Advisory, not blocking. This codebase predates a rustfmt config and is
+      # written in a consistent hand-tuned style; `rustfmt.toml` describes that
+      # style so new code lands close to it, but running `cargo fmt --all` would
+      # touch every file at once. Doing that is a deliberate, separate commit —
+      # not something CI should force on the first contributor who notices.
+      - run: cargo fmt --all --check
+        continue-on-error: true
+      - run: cargo clippy --workspace --all-targets
+
+  msrv:
+    name: minimum supported Rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Kept in step with `rust-version` in the workspace manifest. Claiming an
+      # MSRV nothing checks is how the claim quietly becomes false.
+      - uses: dtolnay/rust-toolchain@1.75.0
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --workspace --all-targets
+
+  audit:
+    name: dependency advisories
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  release-build:
+    name: release binary (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,  target: x86_64-unknown-linux-gnu }
+          - { os: macos-latest,   target: aarch64-apple-darwin }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+      # Everything ships as one binary — you scp it onto a machine and run
+      # `seep node run` — so a broken release build is a broken product even
+      # when every test passes.
+      - run: cargo build --release --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: seep-${{ matrix.target }}
+          path: |
+            target/${{ matrix.target }}/release/seep
+            target/${{ matrix.target }}/release/seep.exe
+          if-no-files-found: error

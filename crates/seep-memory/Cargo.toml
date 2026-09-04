@@ -1,0 +1,25 @@
+[package]
+name        = "seep-memory"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+repository.workspace  = true
+description = "Persistent knowledge about the infrastructure SeeP operates"
+
+[dependencies]
+seep-core  = { path = "../seep-core" }
+seep-proto = { path = "../seep-proto" }
+
+tokio      = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+anyhow     = { workspace = true }
+thiserror  = { workspace = true }
+chrono     = { workspace = true }
+tracing    = { workspace = true }
+reqwest    = { workspace = true }
+rusqlite   = { workspace = true }
+uuid       = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.8"

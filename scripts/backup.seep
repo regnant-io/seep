@@ -1,0 +1,19 @@
+@name    Nightly backup
+@version 2.0.0
+@author  SeeP Example
+
+# Snapshot the data directory and verify the archive is readable.
+#
+# Read-only steps run without asking; the archive write is a change, so this
+# whole plan goes to whoever policy says has to approve it.
+
+set TARGET  = "/var/lib/myapp"
+set ARCHIVE = "/backups/myapp.tar.gz"
+
+checkpoint "before-backup"
+
+shell "du -sh {{ TARGET }}"
+shell "tar -czf {{ ARCHIVE }} {{ TARGET }}"
+shell "tar -tzf {{ ARCHIVE }} > /dev/null"
+
+notify "Backed up {{ TARGET }} to {{ ARCHIVE }}"

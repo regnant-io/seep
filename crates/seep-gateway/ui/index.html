@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SeeP</title>
+  <link rel="stylesheet" href="/app.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🛡️</text></svg>">
+</head>
+<body>
+  <header class="bar">
+    <div class="brand">
+      <span class="mark">SeeP</span>
+      <span class="tag" id="tagline">auditable operations</span>
+    </div>
+    <div class="status" id="status">
+      <span class="dot" id="conn-dot" title="connecting"></span>
+      <span id="conn-text">connecting…</span>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-view="chat" role="tab">Chat</button>
+    <button class="tab" data-view="approvals" role="tab">
+      Approvals <span class="badge" id="approvals-count" hidden>0</span>
+    </button>
+    <button class="tab" data-view="fleet" role="tab">Fleet</button>
+    <button class="tab" data-view="incidents" role="tab">
+      Incidents <span class="badge warn" id="incidents-count" hidden>0</span>
+    </button>
+    <button class="tab" data-view="runs" role="tab">Runs</button>
+    <button class="tab" data-view="audit" role="tab">Audit</button>
+  </nav>
+
+  <main>
+    <!-- Chat -->
+    <section class="view active" id="view-chat">
+      <div class="stream" id="stream" aria-live="polite"></div>
+      <form class="composer" id="composer">
+        <input id="input" type="text" autocomplete="off" spellcheck="false"
+               placeholder="Ask about your infrastructure, or describe a change…">
+        <button type="submit">Send</button>
+      </form>
+    </section>
+
+    <!-- Approvals -->
+    <section class="view" id="view-approvals">
+      <div class="empty" id="approvals-empty">Nothing is waiting on you.</div>
+      <div id="approvals"></div>
+    </section>
+
+    <!-- Fleet -->
+    <section class="view" id="view-fleet">
+      <div class="empty" id="fleet-empty">
+        No nodes are enrolled. Run <code>seep gateway enroll-token</code> to add one.
+      </div>
+      <div class="grid" id="fleet"></div>
+    </section>
+
+    <!-- Incidents -->
+    <section class="view" id="view-incidents">
+      <div class="empty" id="incidents-empty">No incidents. Quiet is good.</div>
+      <div id="incidents"></div>
+    </section>
+
+    <!-- Runs -->
+    <section class="view" id="view-runs">
+      <div class="empty" id="runs-empty">Nothing has run yet.</div>
+      <div id="runs"></div>
+    </section>
+
+    <!-- Audit -->
+    <section class="view" id="view-audit">
+      <div class="chain" id="chain-status">Checking the audit chain…</div>
+      <div id="audit"></div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+[package]
+name        = "seep-tools"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+repository.workspace  = true
+description = "Native tool implementations and the tool dispatch registry for SeeP"
+
+[dependencies]
+seep-core   = { path = "../seep-core" }
+seep-proto  = { path = "../seep-proto" }
+seep-mcp    = { path = "../seep-mcp" }
+
+tokio       = { workspace = true }
+async-trait = { workspace = true }
+serde       = { workspace = true }
+serde_json  = { workspace = true }
+anyhow      = { workspace = true }
+thiserror   = { workspace = true }
+chrono      = { workspace = true }
+tracing     = { workspace = true }
+regex       = { workspace = true }
+once_cell   = { workspace = true }
+indexmap    = { workspace = true }
+sha2        = { workspace = true }
+hex         = { workspace = true }
+base64      = { workspace = true }
+walkdir     = { workspace = true }
+similar     = { workspace = true }
+sysinfo     = { workspace = true }
+reqwest     = { workspace = true }
+dirs        = { workspace = true }
+aes-gcm     = { workspace = true }
+argon2      = { workspace = true }
+rand        = { workspace = true }
+zeroize     = { workspace = true }
+futures-util = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3.8"

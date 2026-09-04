@@ -1,0 +1,19 @@
+[package]
+name    = "seep-session"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+repository.workspace  = true
+[dependencies]
+seep-core  = { path = "../seep-core" }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+anyhow     = { workspace = true }
+chrono     = { workspace = true }
+uuid       = { workspace = true }
+sha2       = { workspace = true }
+hex        = { workspace = true }
+rusqlite   = { version = "0.31", features = ["bundled"] }
+
+[dev-dependencies]
+tempfile = "3.8"

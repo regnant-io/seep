@@ -1,0 +1,82 @@
+# SeeP Constitution
+# Hard rules that SeeP will never violate, regardless of user instruction.
+# Located at ~/.seep/constitution.toml
+
+[rules]
+
+# ── NEVER execute these patterns ───────────────────────────────────────────
+# SeeP will refuse and block any command matching these strings.
+never = [
+    "rm -rf /",
+    "rm -rf /*",
+    "rm --no-preserve-root /",
+    "dd if=/dev/zero of=/dev/sd",
+    "dd if=/dev/zero of=/dev/nvme",
+    "mkfs.ext4 /dev/sd",
+    "mkfs.xfs /dev/sd",
+    ":(){ :|:& };:",           # Fork bomb
+    "chmod 777 /",
+    "> /dev/sda",
+    "shred /dev/sd",
+]
+
+# ── Always require explicit confirmation ───────────────────────────────────
+# Even in --yes mode, these patterns pause for a typed confirmation.
+always_confirm = [
+    "production",
+    "prod-",
+    "-prod",
+    "kubectl delete namespace",
+    "kubectl delete --all",
+    "terraform destroy",
+    "terraform apply -auto-approve",
+    "git push --force",
+    "git push -f",
+    "DROP DATABASE",
+    "DROP TABLE",
+    "TRUNCATE TABLE",
+    "DELETE FROM",
+    "helm uninstall",
+    "aws ec2 terminate-instances",
+    "aws rds delete-db-instance",
+]
+
+# ── Warn but allow ─────────────────────────────────────────────────────────
+# SeeP shows a warning but proceeds after acknowledgement.
+warn = [
+    "sudo",
+    "chmod 777",
+    "curl | sh",
+    "curl | bash",
+    "wget -O- | sh",
+    "staging",
+    "--force",
+]
+
+# ── Time-based restrictions ────────────────────────────────────────────────
+# Example: block production deployments on Fridays after 3pm
+# Uncomment to enable:
+
+# [[rules.time_restrictions]]
+# pattern = "production"
+# days    = ["friday", "saturday", "sunday"]
+# hours   = [15, 16, 17, 18, 19, 20, 21, 22, 23]
+# action  = "block"   # "block" or "warn"
+
+# [[rules.time_restrictions]]
+# pattern = "terraform apply"
+# days    = ["friday"]
+# hours   = [14, 15, 16, 17]
+# action  = "warn"
+
+# ── Notification webhooks ──────────────────────────────────────────────────
+# Notify a webhook when specific patterns are executed
+# Uncomment and configure to enable:
+
+# [[rules.notify_on]]
+# pattern = "production"
+# webhook = "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+
+# [[rules.notify_on]]
+# pattern = "kubectl apply"
+# webhook = "https://your-ops-channel.webhook"

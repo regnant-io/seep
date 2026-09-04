@@ -1,0 +1,19 @@
+[package]
+name        = "seep-proto"
+version.workspace     = true
+edition.workspace     = true
+license.workspace     = true
+repository.workspace  = true
+description = "SeeP wire protocol and shared domain model"
+
+[dependencies]
+seep-core  = { path = "../seep-core" }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+anyhow     = { workspace = true }
+thiserror  = { workspace = true }
+chrono     = { workspace = true }
+uuid       = { workspace = true }
+sha2       = { workspace = true }
+hex        = { workspace = true }
+indexmap   = { workspace = true }

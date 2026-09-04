@@ -1,0 +1,9 @@
+# Match the style this codebase is already written in, rather than reformatting
+# forty thousand lines to match a default.
+#
+# The one that matters is `use_small_heuristics = "Max"`: SeeP keeps short
+# structs, matches and function signatures on one line, which reads better for
+# the many small value types in `seep-proto` than the default's insistence on
+# exploding every one of them across five lines.
+max_width = 100
+use_small_heuristics = "Max"

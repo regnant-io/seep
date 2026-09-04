@@ -1,0 +1,33 @@
+@name    Deploy to staging
+@version 2.0.0
+@author  SeeP Example
+@requires seep-docker, seep-http
+
+# A .seep script is a proposal, not a program.
+#
+# Running it compiles these steps into a plan: SeeP scores each one's blast
+# radius itself, policy decides who has to authorize it, and you see the whole
+# thing — with variables already substituted — before anything runs.
+
+set ENV = "staging"
+set TAG = "latest"
+
+checkpoint "pre-deploy"
+
+think "Confirm the working tree is clean and tests pass before deploying"
+
+shell "cargo test --release"
+
+# Build and publish the image.
+mcp docker_build path="." tag="myapp:{{ TAG }}" no_cache=false
+mcp docker_push image="myapp:{{ TAG }}"
+
+# A second look, mid-plan, before the change reaches the environment.
+ask "Image built. Roll it out to {{ ENV }}?"
+
+mcp http_request url="https://deploy.example.com/deploy" method="POST" body={"env":"{{ ENV }}","tag":"{{ TAG }}"}
+
+# Verify before declaring success.
+mcp http_health url="https://staging.example.com/health"
+
+notify "Deployed {{ TAG }} to {{ ENV }}"

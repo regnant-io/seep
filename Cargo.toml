@@ -1,0 +1,110 @@
+[workspace]
+resolver = "2"
+members = [
+    "seep",
+    "crates/seep-core",
+    "crates/seep-proto",
+    "crates/seep-identity",
+    "crates/seep-mcp",
+    "crates/seep-tools",
+    "crates/seep-safety",
+    "crates/seep-session",
+    "crates/seep-script",
+    "crates/seep-memory",
+    "crates/seep-skills",
+    "crates/seep-agent",
+    "crates/seep-channels",
+    "crates/seep-gateway",
+    "crates/seep-node",
+]
+
+# One version, one license, one repository for every crate here. They ship as a
+# single binary and are versioned together; letting them drift apart made
+# `seep version` disagree with the gateway it was talking to.
+[workspace.package]
+version      = "2.0.0"
+edition      = "2021"
+license      = "MIT"
+repository   = "https://github.com/seep-cli/seep"
+rust-version = "1.75"
+
+[workspace.dependencies]
+# ── Async runtime ─────────────────────────────────────────────────────────
+tokio        = { version = "1", features = ["full"] }
+tokio-util   = { version = "0.7" }
+futures-util = "0.3"
+async-trait  = "0.1"
+
+# ── Serialization ─────────────────────────────────────────────────────────
+serde        = { version = "1.0", features = ["derive"] }
+serde_json   = "1.0"
+toml         = "0.8"
+
+# ── Errors / logging ──────────────────────────────────────────────────────
+anyhow            = "1.0"
+thiserror         = "1.0"
+tracing           = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+# ── Primitives ────────────────────────────────────────────────────────────
+chrono   = { version = "0.4", features = ["serde"] }
+uuid     = { version = "1", features = ["v4", "serde"] }
+dirs     = "5.0"
+colored  = "2.0"
+regex    = "1"
+indexmap = { version = "2", features = ["serde"] }
+once_cell = "1"
+dashmap  = "5"
+humantime = "2"
+
+# ── Crypto ────────────────────────────────────────────────────────────────
+sha2          = "0.10"
+hex           = "0.4"
+hmac          = "0.12"
+base64        = "0.21"
+ed25519-dalek = { version = "2", features = ["rand_core", "serde", "pkcs8", "pem"] }
+rand          = "0.8"
+rand_core     = { version = "0.6", features = ["getrandom"] }
+aes-gcm       = "0.10"
+argon2        = "0.5"
+zeroize       = { version = "1", features = ["derive"] }
+subtle        = "2"
+
+# ── HTTP / WS ─────────────────────────────────────────────────────────────
+axum             = { version = "0.7", features = ["ws", "macros"] }
+tower            = "0.4"
+tower-http       = { version = "0.5", features = ["cors", "trace", "compression-gzip", "limit"] }
+reqwest          = { version = "0.11", default-features = false, features = ["rustls-tls", "json", "stream", "multipart"] }
+tokio-tungstenite = { version = "0.21", features = ["rustls-tls-webpki-roots"] }
+http             = "1"
+
+# ── Storage ───────────────────────────────────────────────────────────────
+rusqlite = { version = "0.31", features = ["bundled", "chrono", "serde_json", "backup"] }
+
+# ── System / files ────────────────────────────────────────────────────────
+sysinfo = "0.30"
+walkdir = "2"
+similar = "2"
+cron    = "0.12"
+glob    = "0.3"
+
+[profile.release]
+opt-level     = 3
+lto           = "thin"
+codegen-units = 4
+panic         = "unwind"
+strip         = "symbols"
+
+[profile.dev]
+opt-level = 0
+# Line tables rather than full debug info. Backtraces still name the file and
+# line, which is what anyone debugging this actually reads, while `target/`
+# stays a few gigabytes rather than twelve — a real cost for contributors and
+# for CI caches.
+debug     = "line-tables-only"
+
+# Dependencies are compiled once and rarely stepped through, so they get no
+# debug info at all and a little optimisation. Cuts both build time and disk.
+[profile.dev.package."*"]
+opt-level = 1
+debug     = false
