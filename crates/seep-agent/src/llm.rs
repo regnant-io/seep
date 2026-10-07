@@ -254,6 +254,8 @@ impl LlmClient {
         match self.profile.backend.as_str() {
             "openai" => "https://api.openai.com".into(),
             "anthropic" => "https://api.anthropic.com".into(),
+            // Where `cordon run` serves on the same machine.
+            "cordon" => "http://127.0.0.1:8443".into(),
             _ => "http://localhost:11434".into(),
         }
     }
@@ -271,7 +273,7 @@ impl LlmClient {
     ) -> Result<LlmResponse, LlmError> {
         match self.profile.backend.as_str() {
             "anthropic" => self.anthropic(request, sink).await,
-            "openai" | "server" | "openai-compat" | "ollama" | "local" => {
+            "openai" | "server" | "openai-compat" | "ollama" | "local" | "cordon" => {
                 self.openai_compatible(request, sink).await
             }
             other => Err(LlmError::UnsupportedBackend(other.to_string())),
@@ -368,6 +370,13 @@ impl LlmClient {
         let mut http = self.http.post(&url).timeout(self.deadline()).json(&body);
         if !self.profile.api_key.is_empty() {
             http = http.bearer_auth(&self.profile.api_key);
+        }
+        // Cordon admits each request under a client identity: on a Light node
+        // the x-client-id header, which `api_key` names. (Every other Cordon
+        // mode identifies clients by mutual TLS at the transport.) Each request
+        // is then audited by the node and each answer signed.
+        if self.profile.backend == "cordon" && !self.profile.api_key.is_empty() {
+            http = http.header("x-client-id", &self.profile.api_key);
         }
 
         let response = http.send().await.map_err(|e| self.transport_error(e))?;
@@ -876,6 +885,10 @@ mod tests {
         assert_eq!(
             LlmClient::new(ModelProfile { backend: "server".into(), endpoint: String::new(), ..Default::default() }).endpoint(),
             "http://localhost:11434"
+        );
+        assert_eq!(
+            LlmClient::new(ModelProfile { backend: "cordon".into(), endpoint: String::new(), ..Default::default() }).endpoint(),
+            "http://127.0.0.1:8443"
         );
     }
 

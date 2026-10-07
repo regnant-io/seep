@@ -16,6 +16,15 @@ backend  = "server"                   # any OpenAI-compatible endpoint
 model    = "qwen2.5:3b"
 endpoint = "http://localhost:11434"   # Ollama, llama.cpp, vLLM…
 
+# Cordon (Regnant): local inference where every prompt is audited and every
+# answer signed by the node. api_key is the client ID enrolled in Cordon's
+# clients.json; tool calls work when the runtime supports them.
+# [models.profiles.cordon]
+# backend  = "cordon"
+# model    = "default"                # the model the node loaded
+# endpoint = "http://127.0.0.1:8443"
+# api_key  = "seep"
+
 [models.profiles.balanced]
 backend  = "anthropic"
 model    = "claude-sonnet-5"

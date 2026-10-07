@@ -60,8 +60,8 @@ impl TaskKind {
 /// One configured model endpoint.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelProfile {
-    /// `server` (any OpenAI-compatible endpoint, including Ollama), `openai`,
-    /// or `anthropic`.
+    /// `server` (any OpenAI-compatible endpoint, including Ollama), `cordon`
+    /// (Regnant's confidential inference engine), `openai`, or `anthropic`.
     pub backend: String,
     pub model: String,
     #[serde(default)]
@@ -107,6 +107,11 @@ impl ModelProfile {
         }
         if self.backend == "openai" || self.backend == "anthropic" {
             return false;
+        }
+        // A Cordon node is inference on the operator's own hardware by
+        // definition, wherever on their network it listens.
+        if self.backend == "cordon" {
+            return true;
         }
         let endpoint = self.endpoint.to_ascii_lowercase();
         endpoint.is_empty()
