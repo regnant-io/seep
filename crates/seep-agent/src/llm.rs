@@ -212,6 +212,9 @@ pub type StreamSink = Option<tokio::sync::mpsc::Sender<String>>;
 pub struct LlmClient {
     profile: ModelProfile,
     http: reqwest::Client,
+    /// Why the profile's TLS identity could not be loaded, reported on the
+    /// first request rather than silently falling back to no identity.
+    tls_error: Option<String>,
 }
 
 /// One HTTP client, shared by every profile.
@@ -229,9 +232,46 @@ static HTTP: once_cell::sync::Lazy<reqwest::Client> = once_cell::sync::Lazy::new
         .unwrap_or_default()
 });
 
+/// A dedicated client carrying the profile's mutual-TLS identity and CA, when
+/// it names them; the shared pool otherwise.
+fn client_for(profile: &ModelProfile) -> Result<reqwest::Client, String> {
+    if profile.client_cert.is_empty() && profile.ca_cert.is_empty() {
+        return Ok(HTTP.clone());
+    }
+    let read = |what: &str, path: &str| {
+        std::fs::read(path).map_err(|e| format!("cannot read the {what} {path}: {e}"))
+    };
+    let mut builder = reqwest::Client::builder()
+        .connect_timeout(Duration::from_secs(10))
+        .pool_idle_timeout(Duration::from_secs(90))
+        .user_agent(concat!("seep/", env!("CARGO_PKG_VERSION")));
+    if !profile.ca_cert.is_empty() {
+        let pem = read("CA certificate", &profile.ca_cert)?;
+        let ca = reqwest::Certificate::from_pem(&pem)
+            .map_err(|e| format!("{} is not a PEM certificate: {e}", profile.ca_cert))?;
+        builder = builder.add_root_certificate(ca);
+    }
+    if !profile.client_cert.is_empty() {
+        // rustls takes the certificate chain and the key as one PEM bundle.
+        let mut pem = read("client certificate", &profile.client_cert)?;
+        if !profile.client_key.is_empty() {
+            pem.push(b'\n');
+            pem.extend(read("client key", &profile.client_key)?);
+        }
+        let identity = reqwest::Identity::from_pem(&pem).map_err(|e| {
+            format!("{} (with its key) is not a usable PEM identity: {e}", profile.client_cert)
+        })?;
+        builder = builder.identity(identity);
+    }
+    builder.build().map_err(|e| format!("cannot build the TLS client: {e}"))
+}
+
 impl LlmClient {
     pub fn new(profile: ModelProfile) -> Self {
-        Self { profile, http: HTTP.clone() }
+        match client_for(&profile) {
+            Ok(http) => Self { profile, http, tls_error: None },
+            Err(e) => Self { profile, http: HTTP.clone(), tls_error: Some(e) },
+        }
     }
 
     /// The deadline for one whole request.
@@ -271,6 +311,9 @@ impl LlmClient {
         request: LlmRequest,
         sink: StreamSink,
     ) -> Result<LlmResponse, LlmError> {
+        if let Some(detail) = &self.tls_error {
+            return Err(LlmError::Unreachable { endpoint: self.endpoint(), detail: detail.clone() });
+        }
         match self.profile.backend.as_str() {
             "anthropic" => self.anthropic(request, sink).await,
             "openai" | "server" | "openai-compat" | "ollama" | "local" | "cordon" => {
@@ -945,5 +988,37 @@ mod tests {
             input_schema: json!({}),
         }]);
         assert!(with_tools.estimated_tokens() > bare.estimated_tokens());
+    }
+
+    fn fixture(name: &str) -> String {
+        format!("{}/tests/fixtures/{name}", env!("CARGO_MANIFEST_DIR"))
+    }
+
+    #[test]
+    fn a_cordon_mtls_identity_is_loaded() {
+        let client = LlmClient::new(ModelProfile {
+            backend: "cordon".into(),
+            endpoint: "https://cordon.internal:8443".into(),
+            client_cert: fixture("cordon-client.crt"),
+            client_key: fixture("cordon-client.key"),
+            ca_cert: fixture("cordon-client.crt"),
+            ..Default::default()
+        });
+        assert_eq!(client.tls_error, None);
+    }
+
+    #[tokio::test]
+    async fn a_missing_identity_is_reported_not_skipped() {
+        let client = LlmClient::new(ModelProfile {
+            backend: "cordon".into(),
+            endpoint: "https://cordon.internal:8443".into(),
+            client_cert: "/nowhere/seep.crt".into(),
+            ..Default::default()
+        });
+        let err = client.complete(LlmRequest::new(vec![ChatMessage::user("hi")])).await.unwrap_err();
+        match err {
+            LlmError::Unreachable { detail, .. } => assert!(detail.contains("cannot read the client certificate")),
+            other => panic!("unexpected {other:?}"),
+        }
     }
 }

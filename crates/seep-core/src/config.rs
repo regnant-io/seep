@@ -438,6 +438,7 @@ impl Config {
                 context_window: self.ai.context_window,
                 token_timeout_secs: self.ai.token_timeout_secs,
                 local: None,
+                ..Default::default()
             },
         );
         routing.routing.default_profile = "default".to_string();

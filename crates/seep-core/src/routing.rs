@@ -80,6 +80,16 @@ pub struct ModelProfile {
     /// automatically from the endpoint, and consulted by sovereign mode.
     #[serde(default)]
     pub local: Option<bool>,
+    /// Mutual-TLS identity for a Cordon node that identifies clients by
+    /// certificate (every mode but Light): PEM files issued by `cordon pki`.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub client_cert: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub client_key: String,
+    /// The CA that signed the node's certificate, when it is not publicly
+    /// trusted (a node's own `cordon pki` CA, typically).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub ca_cert: String,
 }
 
 fn default_temperature() -> f32 {
@@ -144,6 +154,9 @@ impl Default for ModelProfile {
             context_window: default_context(),
             token_timeout_secs: default_timeout(),
             local: None,
+            client_cert: String::new(),
+            client_key: String::new(),
+            ca_cert: String::new(),
         }
     }
 }

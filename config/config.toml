@@ -24,6 +24,11 @@ endpoint = "http://localhost:11434"   # Ollama, llama.cpp, vLLM…
 # model    = "default"                # the model the node loaded
 # endpoint = "http://127.0.0.1:8443"
 # api_key  = "seep"
+# For a node that identifies clients by mutual TLS (every mode but Light):
+# endpoint    = "https://cordon.internal:8443"
+# client_cert = "/etc/seep/cordon/seep.crt"     # issued by the node's `cordon pki`
+# client_key  = "/etc/seep/cordon/seep.key"
+# ca_cert     = "/etc/seep/cordon/ca.crt"
 
 [models.profiles.balanced]
 backend  = "anthropic"
